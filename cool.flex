@@ -93,6 +93,8 @@ class|CLASS { printf("#%d " ,lcount);
 \"[\40-\176\"]+ {printf("#%d ",lcount); printf("STR_CONST %s\n",yytext);}
 [0-9]+ {printf("#%d ",lcount); printf("INT_CONST %s\n",yytext);}
 \<\- {printf("#%d ",lcount); printf("ASSIGN\n");}
+"*)" {printf("#%d ",lcount);printf("ERROR \"Unmatched *)\"\n");}
+
  /*
   *  Nested comments
   */

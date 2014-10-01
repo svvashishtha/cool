@@ -117,6 +117,38 @@ class|CLASS { printf("#%d " ,lcount);
 
 	}
      }
+\"  {
+	
+	printf("#%d ",lcount);
+	printf("STR_CONST \"");
+	char c;
+	for(;;)
+	{
+	while((c = yyinput()) != '"' && c != '\\'&& c!=EOF && c != '\n')
+		printf("%c",c);
+	
+	if(c == '\\')
+	{
+	   c = yyinput();
+	   if(c == 'n'|| c == 't' || c == 'b' || c == 'f' || c=='"')
+		printf("\\%c",c);
+	   else if(c == '\n')
+		{
+		printf("\\n");
+		lcount++;
+		}
+	   else printf("%c",c);
+	}
+	else if(c == '\n')
+	{}
+	else if(c == '"')
+		break;
+	}
+	printf("\"\n");    
+}
+
+
+
 
  /*
   *  Nested comments

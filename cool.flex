@@ -78,22 +78,45 @@ class|CLASS { printf("#%d " ,lcount);
 [n|N][e|E][w|W] {printf("#%d ",lcount);printf("NEW\n");}
 [o|O][f|F] {printf("#%d ",lcount);printf("OF\n");}
 [n|N][o|O][t|T] {printf("#%d ",lcount);printf("NOT\n");}
-[t][r|R][u|U][e|E] {printf("#%d ",lcount);printf("TRUE\n");}
-[f][a|A][l|L][s|S][e|E] {printf("#%d ",lcount);printf("FALSE\n");}
+[t][r|R][u|U][e|E] {printf("#%d ",lcount);printf("BOOL_CONST true\n");}
+[f][a|A][l|L][s|S][e|E] {printf("#%d ",lcount);printf("BOOL_CONST false\n");}
 	
 
 			
-[{|}|;|:|(|)|=|.]   {  printf("#%d ",lcount);
+[{|}|;|:|(|)|=|.|\/|\\|+|\-|*|~|`|,|<|@|#|$|%|^|&]   {  printf("#%d ",lcount);
 		printf("'%s'\n",yytext);	}
+> {printf("#%d ",lcount); printf("ERROR \">\"\n");}
 [ |\t] ;
 "--"[^\n]* ;
-"(*"(.|\n)*"*)"	  ;
+
 [a-z]+[0-9_A-Za-z]* {printf("#%d ",lcount); printf("OBJECTID %s\n",yytext);} 
 [A-Z]+[0-9_a-zA-Z]*  {printf("#%d ",lcount);printf("TYPEID %s\n",yytext);}
-\"[\40-\176\"]+ {printf("#%d ",lcount); printf("STR_CONST %s\n",yytext);}
+
+
 [0-9]+ {printf("#%d ",lcount); printf("INT_CONST %s\n",yytext);}
 \<\- {printf("#%d ",lcount); printf("ASSIGN\n");}
 "*)" {printf("#%d ",lcount);printf("ERROR \"Unmatched *)\"\n");}
+"(*" {
+	char c;
+	for(;;)
+	{
+		while( (c = yyinput()) != '*' && c != EOF && c != '\n');
+
+		if(c == '*') {
+			while((c = yyinput()) == '*');
+		if(c == ')')
+			break;
+		}
+		if(c == EOF)
+		{
+			printf("#%d ",lcount);
+			printf("ERROR (\"EOF IN COMMENT\")");
+            		break;
+		}
+		if(c == '\n') lcount++;
+
+	}
+     }
 
  /*
   *  Nested comments

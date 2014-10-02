@@ -86,7 +86,7 @@ DARROW          =>
 	
 
 			
-[{|}|;|:|(|)|=|.|\/|\\|+|\-|*|~|`|,|<|@|#|$|%|^|&|']   {  printf("#%d ",lcount);
+[{|}|;|:|(|)|=|.|\/|\\|+|\-|*|~|`|,|<|@|#|$|%|^|&|'|?]   {  printf("#%d ",lcount);
 		printf("'%s'\n",yytext);	}
 [>|_] {printf("#%d ",lcount); printf("ERROR \"%s\"\n",yytext);}
 [ |\t] ;
@@ -100,21 +100,28 @@ DARROW          =>
 \<\- {printf("#%d ",lcount); printf("ASSIGN\n");}
 "*)" {printf("#%d ",lcount);printf("ERROR \"Unmatched *)\"\n");}
 "(*" {
-	char c;
-	for(;;)
+	char c;int count = 1;
+	for(;count > 0;)
 	{
-		while( (c = yyinput()) != '*' && c != EOF && c != '\n'&& c!= '\\');
+		while( (c = yyinput()) != '*' && c != EOF && c != '\n'&& c!= '\\' && c!= '(');
 
 		if(c == '*') {
 			while((c = yyinput()) == '*');
 		if(c == ')')
-			break;
+			count--;
 		}
+		
 		if(c == EOF)
 		{
 			printf("#%d ",lcount);
 			printf("ERROR (\"EOF IN COMMENT\")");
             		break;
+		}
+		if(c == '(')
+		{
+			c = yyinput();
+			if(c == '*')
+				count++;
 		}
 		if(c == '\n') lcount++;
 		if(c == '\\')
@@ -129,7 +136,7 @@ DARROW          =>
 	char c;std::string buf;
 	for(;;)
 	{
-	while((c = yyinput()) != '"' && c != '\\'&& c!=EOF && c != '\n')
+	while((c = yyinput()) != '"' && c != '\\'&& c!=EOF && c != '\n' && c > 037)
 		buf+=c;
 	if(c == '"')
 		{
@@ -137,6 +144,12 @@ DARROW          =>
 			cout<<"STR_CONST \""<<buf<<"\""<<std::endl;
 			break;
 		}
+	if( c <= 037)
+	{
+		
+		buf += "\\" ;
+		
+	}
 	if( c == '\\')
 		{
 			char temp= c;
@@ -145,6 +158,12 @@ DARROW          =>
 				{buf +=temp;buf+=c;}
 			else if(c == '\n')
 				{lcount++;buf +="\\n";}
+			else if(c == '\t')
+				buf += "\\t";
+			else if(c == '\b')
+				buf += "\\b";
+			else if(c == '\f')
+				buf += "\\f";
 			else buf += c;
    			
 		}

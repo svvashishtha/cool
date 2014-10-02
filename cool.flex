@@ -11,6 +11,7 @@
 #include <cool-parse.h>
 #include <stringtab.h>
 #include <utilities.h>
+#include <string.h>
 
 /* The compiler assumes these identifiers. */
 #define yylval cool_yylval
@@ -47,6 +48,8 @@ extern YYSTYPE cool_yylval;
 int lcount = 1;
 
 
+bool flag;
+
 
 %}
 
@@ -56,11 +59,11 @@ int lcount = 1;
 
 DARROW          =>
 %x classname inherit inhetype
-
+%x STRING
 %%
 [\n] lcount++;
 
-class|CLASS { printf("#%d " ,lcount);
+[c|C][l|L][a|A][s|S][s|S] { printf("#%d " ,lcount);
 	printf("CLASS\n");}
 [i|I][f|F]  {  printf("#%d ",lcount); printf("IF\n");}
 [e|E][l|L][s|S][e|E] {  printf("#%d ",lcount); printf("ELSE\n");}
@@ -83,9 +86,9 @@ class|CLASS { printf("#%d " ,lcount);
 	
 
 			
-[{|}|;|:|(|)|=|.|\/|\\|+|\-|*|~|`|,|<|@|#|$|%|^|&]   {  printf("#%d ",lcount);
+[{|}|;|:|(|)|=|.|\/|\\|+|\-|*|~|`|,|<|@|#|$|%|^|&|']   {  printf("#%d ",lcount);
 		printf("'%s'\n",yytext);	}
-> {printf("#%d ",lcount); printf("ERROR \">\"\n");}
+[>|_] {printf("#%d ",lcount); printf("ERROR \"%s\"\n",yytext);}
 [ |\t] ;
 "--"[^\n]* ;
 
@@ -100,7 +103,7 @@ class|CLASS { printf("#%d " ,lcount);
 	char c;
 	for(;;)
 	{
-		while( (c = yyinput()) != '*' && c != EOF && c != '\n');
+		while( (c = yyinput()) != '*' && c != EOF && c != '\n'&& c!= '\\');
 
 		if(c == '*') {
 			while((c = yyinput()) == '*');
@@ -114,41 +117,51 @@ class|CLASS { printf("#%d " ,lcount);
             		break;
 		}
 		if(c == '\n') lcount++;
+		if(c == '\\')
+		{
+			c = yyinput();
+		}
+
 
 	}
      }
-\"  {
-	
-	printf("#%d ",lcount);
-	printf("STR_CONST \"");
-	char c;
+\"       {
+	char c;std::string buf;
 	for(;;)
 	{
 	while((c = yyinput()) != '"' && c != '\\'&& c!=EOF && c != '\n')
-		printf("%c",c);
-	
-	if(c == '\\')
-	{
-	   c = yyinput();
-	   if(c == 'n'|| c == 't' || c == 'b' || c == 'f' || c=='"')
-		printf("\\%c",c);
-	   else if(c == '\n')
+		buf+=c;
+	if(c == '"')
 		{
-		printf("\\n");
-		lcount++;
+			printf("#%d ",lcount);
+			cout<<"STR_CONST \""<<buf<<"\""<<std::endl;
+			break;
 		}
-	   else printf("%c",c);
+	if( c == '\\')
+		{
+			char temp= c;
+			c = yyinput();
+			if( c == '\\' || c == 'n' || c == 'b' || c == 'f' || c == 't')
+				{buf +=temp;buf+=c;}
+			else if(c == '\n')
+				{lcount++;buf +="\\n";}
+			else buf += c;
+   			
+		}
+	else if( c == '\n')
+		{lcount++;
+		 printf("#%d ",lcount);
+		 printf("ERROR \"Unterminated string constant\"\n");
+		 break;}
+	else if(c == EOF)
+	{
+		 printf("#%d ",lcount);
+		 printf("ERROR \"EOF in string constant\"\n");
+		 break;
 	}
-	else if(c == '\n')
-	{}
-	else if(c == '"')
-		break;
+	
 	}
-	printf("\"\n");    
-}
-
-
-
+	}
 
  /*
   *  Nested comments

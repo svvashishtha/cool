@@ -85,10 +85,11 @@ DARROW          =>
 [f][a|A][l|L][s|S][e|E] {printf("#%d ",lcount);printf("BOOL_CONST false\n");}
 	
 
-			
-[{|}|;|:|(|)|=|.|\/|\\|+|\-|*|~|`|,|<|@|#|$|%|^|&|'|?]   {  printf("#%d ",lcount);
+[>|_|$|%|^|&|?|`|\[|\]|\||!|\#] {printf("#%d ",lcount);printf("ERROR \"%s\"\n",yytext);}
+[{|}|;|:|(|)|=|.|/|\+|\-|\*|~|,|<|@|']   {  printf("#%d ",lcount);
 		printf("'%s'\n",yytext);	}
-[>|_] {printf("#%d ",lcount); printf("ERROR \"%s\"\n",yytext);}
+ 
+[\\] {printf("#%d ",lcount); printf("ERROR \"\\\\\"\n");}
 [ |\t] ;
 "--"[^\n]* ;
 
@@ -98,6 +99,7 @@ DARROW          =>
 
 [0-9]+ {printf("#%d ",lcount); printf("INT_CONST %s\n",yytext);}
 \<\- {printf("#%d ",lcount); printf("ASSIGN\n");}
+\<\= {printf("#%d ",lcount); printf("LE\n");}
 "*)" {printf("#%d ",lcount);printf("ERROR \"Unmatched *)\"\n");}
 "(*" {
 	char c;int count = 1;
@@ -146,15 +148,17 @@ DARROW          =>
 		}
 	if( c <= 037)
 	{
-		
-		buf += "\\" ;
+		char buffer[32];  
+		sprintf(buffer, "%o", c);
+		buf += "\\0" ;
+		buf += buffer;
 		
 	}
 	if( c == '\\')
 		{
 			char temp= c;
 			c = yyinput();
-			if( c == '\\' || c == 'n' || c == 'b' || c == 'f' || c == 't')
+			if( c == '\\' || c == 'n' || c == 'b' || c == 'f' || c == 't'|| c =='"')
 				{buf +=temp;buf+=c;}
 			else if(c == '\n')
 				{lcount++;buf +="\\n";}

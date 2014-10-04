@@ -48,7 +48,7 @@ extern YYSTYPE cool_yylval;
 int lcount = 1;
 
 
-bool flag;
+bool nulflag = 0;
 
 
 %}
@@ -116,7 +116,7 @@ DARROW          =>
 		if(c == EOF)
 		{
 			printf("#%d ",lcount);
-			printf("ERROR (\"EOF IN COMMENT\")");
+			printf("ERROR (\"EOF IN COMMENT\")\n");
             		break;
 		}
 		if(c == '(')
@@ -134,20 +134,47 @@ DARROW          =>
 
 	}
      }
+[\001-\004]  {  printf("#%d ",lcount);
+		char buffer[32],c;c = yytext[yyleng -1];  
+		sprintf(buffer, "%o",c);
+		printf("ERROR \"\\00") ;
+		printf("%s",buffer);
+		printf("\"\n");
+		} 
 \"       {
-	char c;std::string buf;
+	char c;std::string buf;int length=0;
 	for(;;)
 	{
+	
 	while((c = yyinput()) != '"' && c != '\\'&& c!=EOF && c != '\n' && c > 037)
-		buf+=c;
+		{buf+=c;}
 	if(c == '"')
 		{
 			printf("#%d ",lcount);
-			cout<<"STR_CONST \""<<buf<<"\""<<std::endl;
+			if(nulflag == 0){
+			
+			if(buf.length() <= 2048)
+			{cout<<"STR_CONST \""<<buf<<"\""<<std::endl;
+			}
+			else
+			printf("ERROR \"String constant too long\"\n");
+			}
+			else {
+			
+			printf("ERROR \"String contains null character.\"\n");
+			}
+			
 			break;
+			
+			
 		}
-	if( c <= 037)
+	if( c == 000)
 	{
+		nulflag = 1;
+	}
+	else	if( c <= 037)
+	{
+		
 		char buffer[32];  
 		sprintf(buffer, "%o", c);
 		buf += "\\0" ;
@@ -159,7 +186,7 @@ DARROW          =>
 			char temp= c;
 			c = yyinput();
 			if( c == '\\' || c == 'n' || c == 'b' || c == 'f' || c == 't'|| c =='"')
-				{buf +=temp;buf+=c;}
+				{buf +=temp;buf+=c; if(c == '"') length++;}
 			else if(c == '\n')
 				{lcount++;buf +="\\n";}
 			else if(c == '\t')
@@ -184,6 +211,7 @@ DARROW          =>
 	}
 	
 	}
+	
 	}
 
  /*

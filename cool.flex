@@ -90,7 +90,7 @@ DARROW          =>
 		printf("'%s'\n",yytext);	}
  
 [\\] {printf("#%d ",lcount); printf("ERROR \"\\\\\"\n");}
-[ |\t] ;
+[ |\t|\f|\015|\013] ;
 "--"[^\n]* ;
 
 [a-z]+[0-9_A-Za-z]* {printf("#%d ",lcount); printf("OBJECTID %s\n",yytext);} 
@@ -116,7 +116,7 @@ DARROW          =>
 		if(c == EOF)
 		{
 			printf("#%d ",lcount);
-			printf("ERROR (\"EOF IN COMMENT\")\n");
+			printf("ERROR \"EOF IN COMMENT\"\n");
             		break;
 		}
 		if(c == '(')
@@ -142,7 +142,7 @@ DARROW          =>
 		printf("\"\n");
 		} 
 \"       {
-	char c;std::string buf;int length=0;
+	char c;std::string buf;int len=0;
 	for(;;)
 	{
 	
@@ -153,7 +153,7 @@ DARROW          =>
 			printf("#%d ",lcount);
 			if(nulflag == 0){
 			
-			if(buf.length() <= 2048)
+			if(buf.length()+len <= 1024)
 			{cout<<"STR_CONST \""<<buf<<"\""<<std::endl;
 			}
 			else
@@ -168,33 +168,21 @@ DARROW          =>
 			
 			
 		}
-	if( c == 000)
-	{
-		nulflag = 1;
-	}
-	else	if( c <= 037)
-	{
-		
-		char buffer[32];  
-		sprintf(buffer, "%o", c);
-		buf += "\\0" ;
-		buf += buffer;
-		
-	}
+	
 	if( c == '\\')
 		{
 			char temp= c;
 			c = yyinput();
 			if( c == '\\' || c == 'n' || c == 'b' || c == 'f' || c == 't'|| c =='"')
-				{buf +=temp;buf+=c; if(c == '"') length++;}
+				{buf +=temp;buf+=c; len--;}
 			else if(c == '\n')
-				{lcount++;buf +="\\n";}
+				{lcount++;buf +="\\n";len--;}
 			else if(c == '\t')
-				buf += "\\t";
+				{buf += "\\t";len--;}
 			else if(c == '\b')
-				buf += "\\b";
+				{buf += "\\b"; len--;}
 			else if(c == '\f')
-				buf += "\\f";
+				{buf += "\\f";len--;}
 			else buf += c;
    			
 		}
@@ -208,6 +196,25 @@ DARROW          =>
 		 printf("#%d ",lcount);
 		 printf("ERROR \"EOF in string constant\"\n");
 		 break;
+	}
+	else if( c == 000)
+	{
+		nulflag = 1;
+	}
+	
+	else	if( c <= 037)
+	{
+		
+		if(c == 011)
+		{ buf += "\\t";}
+		else if (c == 014)
+		{ buf += "\\f";} 
+		else {
+		char buffer[32];  
+		sprintf(buffer, "%o", c);
+		buf += "\\0" ;
+		buf += buffer;
+		}
 	}
 	
 	}

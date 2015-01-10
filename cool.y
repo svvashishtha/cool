@@ -13,7 +13,7 @@
   
   
   /* Locations */
-  #define YYLTYPE int              /* the type of locations */
+  #define YYLTYPE int              /* the TYPEID of locations */
   #define cool_yylloc curr_lineno  /* use the curr_lineno from the lexer
   for the location of tokens */
     
@@ -125,17 +125,17 @@
     /*  DON'T CHANGE ANYTHING ABOVE THIS LINE, OR YOUR PARSER WONT WORK       */
     /**************************************************************************/
     
-    /* Complete the nonterminal list below, giving a type for the semantic
+    /* Complete the nonterminal list below, giving a TYPEID for the semantic
     value of each non terminal. (See section 3.6 in the bison 
     documentation for details). */
     
     /* Declare types for the grammar's non-terminals. */
-    %type <program> program
-    %type <classes> class_list
-    %type <class_> class
+    %TYPEID <program> program
+    %TYPEID <classes> class_list
+    %TYPEID <class_> class
     
     /* You will want to change the following line. */
-    %type <features> dummy_feature_list
+    %TYPEID <features> dummy_feature_list
     
     /* Precedence declarations go here. */
     
@@ -168,65 +168,114 @@
     dummy_feature_list:		/* empty */
     {  $$ = nil_Features(); }
     feature :
-	     ID '('(formal (','formal)*)?':'TYPE '{' expression '}'
-	    |ID :TYPE ( '<-' expression)
+	     ID '('(formal (','formal)*)?':'TYPEID '{' expression '}'
+	    |ID :TYPEID ( '<-' expression)
 		;
 	formal :
-		ID ':' TYPE
+		ID ':' TYPEID
 		;
 	expression :
 		ID '<-' expression
-	|	expression ('@' TYPE ) '.'ID '(' (expression ( ','expression)*)?')'
+	|	expression ('@' TYPEID ) '.'ID '(' (expression ( ','expression)*)?')'
 	|	ID '('(expression(','expression)*)?')'
 	|	ID '(' (expression (',' expression)*?) ')'
-	|	
+	|	if expression then expression else expression fi
+	|   while expression loop expression pool
+	|   '{' (expression ';'!) '}'
+	|   let ID ':' TYPEID ( '<-' expression ) ? (',' ID ':' TYPEID ( '<-' expression )?)* in expression
+	|	case expression of ( ID ':' TYPEID '=>' expression ';')+ esac! 
+	|	new TYPEID
+	|	isvoid expression
+	|	expression '+' expression
+	|	expression '-' expression
+	|	expression '*' expression
+	|	expression '/' expression
+	|	'~' expression
+	|   expression '<' expression
+	|	expression '<=' expression
+	|	expression '=' expression
+	|	not expression
+	|	'('expression')'
+	|	ID
+	|	integer
+	|	string
+	|	true
+	|	false	
+	;
+	SINGLE_COMM:
+	'--'(~'\n')* {$channel = HIDDEN;}
+	;
+	
+	of:
+	('o'|'O')('f'|'F')
+	;
+	in:
+	('I'|'i')('N'|'n')
 	;
 	if:
-	( 'I')( 'F')
+	( 'I'|'i')( 'F'|'f')
 		;
 	else:
-	('ELSE')
+	('E'|'e')('L'|'l')('S'|'s')('E'|'e')
 	;
 	fi:
-	('F')('I');
+	('F'|'f')('I'|'i');
 	let:
-	('L') ('E')('T')
+	('L'|'l') ('e'|'E')('T'|'t')
 	;
 	while:
-	('W')('H')( 'I')('L')('E')
+	('W'|'w')('h'|'H')('i'| 'I')('l'|'L')('E'|'e')
 	;
 	then:
-	('T')('H')('E')('N')
+	('T'|'t')('H'|'h')('E'|'e')('N'|'n')
 	;
 	case:
-	('C')('A')('S') ('E')
+	('C'|'c')('A'|'a')('S'|'s') ('E'|'e')
 	;
 	esac:
-	('E')('S')('A')('C')
+	('E'|'e')('S'|'s')('A'|'a')('C'|'c')
 	;
 	
 	true:
-	('T')('R')('U')('E');
+	('T'|'t')('R'|'r')('U'|'u')('E'|'e');
 	false:
-	('F')('A')('L')('S')('E')
+	('F'|'f')('A'|'a')('L'|'l')('S'|'s')('E'|'e')
 	;
 	not:
-	('N')('O')('T')
+	('N'|'n')('O'|'o')('T'|'t')
 	;
 	new:
-	('N')('E')('W')
+	('N'|'n')('E'|'e')('W'|'w')
 	;
 	isvoid:
-	('I')('S')('V')('O')('I')('D')
+	('I'|'i')('s'|'S')('v'|'V')('o'|'O')('i'|'I')('d'|'D')
 	;
 	
-	TYPE:
+	TYPEID:
 	('A'..'Z')(('a'..'z')|('A'..'Z'))*
 	;
 	ID:
 	'SELF_TYPE'
 	|(('a'..'z')|('A'..'Z')|'_')+
 	;
+	WHITE_SPACE:
+	( ' '
+	| '\t'
+	| '\r'
+	| '\n'
+	) {$channel = HIDDEN;}
+	;
+	string:
+	'\"' (ESCAPE_SEQ | ~ ('\\\n' | '\"') )* '\"'
+	;
+	fragment
+ESC_SEQ
+    :   '\\' ('b'|'t'|'n'|'f'|'r'|'\"'|'\''|'\\')
+    ;
+	integer:
+	'0'..'9'+
+	;
+	
 	
 	
 	
